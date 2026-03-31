@@ -1,0 +1,199 @@
+================================================================================
+                    RESUMEAI - TECHNICAL EXPLANATION
+================================================================================
+
+OVERVIEW
+--------
+ResumeAI is a full-stack web application built with Next.js 15 that analyzes 
+resumes using AI and provides actionable feedback. The app uses a modern 
+architecture with React Server Components, API routes, and a responsive UI.
+
+
+ARCHITECTURE
+------------
+
+1. FRONTEND (Client-Side)
+   
+   The frontend consists of three main components:
+   
+   a) page.tsx (Main Page)
+      - Server component that renders the main layout
+      - Contains the hero section with branding and upload area
+      - Manages the flow between upload and results views
+      - Uses the ResumeAnalyzer client component for interactivity
+   
+   b) resume-upload.tsx (Upload Component)
+      - Handles drag-and-drop file uploads (.txt, .md files)
+      - Supports direct text pasting in a textarea
+      - Validates input and manages loading states
+      - Sends resume text to the /api/analyze endpoint
+   
+   c) analysis-results.tsx (Results Display)
+      - Displays the analysis results in a structured layout
+      - Shows overall score with animated ring visualization
+      - Breaks down scores by category (Content, Formatting, Keywords, Impact)
+      - Lists strengths, weaknesses, and suggestions
+      - Shows keyword badges for present/missing skills
+
+   d) score-ring.tsx (Score Visualization)
+      - Animated SVG circular progress indicator
+      - Color-coded based on score (red < 50, yellow 50-75, green > 75)
+      - Smooth animation on mount using CSS transitions
+
+
+2. BACKEND (API Route)
+   
+   /api/analyze/route.ts handles all resume analysis:
+   
+   a) Primary: Perplexity AI Analysis
+      - Calls Perplexity's /chat/completions endpoint
+      - Uses the "sonar" model for intelligent analysis
+      - Sends a detailed prompt asking for structured JSON output
+      - Parses the AI response and validates the structure
+   
+   b) Fallback: Local Keyword-Based Analysis
+      - Activates when API key is missing or invalid
+      - Uses pattern matching to detect:
+        * Technical skills (programming languages, frameworks, tools)
+        * Action verbs (managed, developed, implemented, etc.)
+        * Quantified achievements (percentages, dollar amounts, metrics)
+        * Resume sections (experience, education, skills, etc.)
+        * Contact information (email, phone, LinkedIn)
+      - Calculates scores based on keyword density and section completeness
+      - Provides realistic, helpful feedback without AI
+
+
+3. DATA FLOW
+   
+   User uploads resume
+         │
+         ▼
+   resume-upload.tsx validates input
+         │
+         ▼
+   POST /api/analyze with resumeText
+         │
+         ▼
+   API checks for PERPLEXITY_API_KEY
+         │
+    ┌────┴────┐
+    │         │
+    ▼         ▼
+   Key      No Key
+   exists   or error
+    │         │
+    ▼         ▼
+   Perplexity  Local
+   AI API      Analyzer
+    │         │
+    └────┬────┘
+         │
+         ▼
+   JSON response with scores, feedback, suggestions
+         │
+         ▼
+   analysis-results.tsx displays results
+
+
+DESIGN SYSTEM
+-------------
+
+Color Palette:
+- Primary: Cyan/Sky Blue (#0ea5e9) - Trust, professionalism
+- Accent: Teal/Emerald (#10b981) - Success, growth
+- Background: Dark slate (#0f172a) - Modern, focused
+- Text: Light gray (#e2e8f0) - High contrast, readable
+
+Typography:
+- Headings: Inter (clean, modern sans-serif)
+- Body: Inter (consistent, readable)
+- Code/Data: JetBrains Mono (technical feel)
+
+Layout:
+- Responsive grid system
+- Card-based component layout
+- Generous spacing for readability
+- Animated score rings for visual interest
+
+
+SCORING ALGORITHM (Local Fallback)
+----------------------------------
+
+The local analyzer calculates scores as follows:
+
+1. CONTENT SCORE (0-100)
+   - Base: 40 points
+   - +3 per action verb found (max 30 points)
+   - +5 per quantified achievement (max 30 points)
+   - Capped at 100
+
+2. FORMATTING SCORE (0-100)
+   - Base: 50 points
+   - +10 per standard section found (Experience, Education, Skills, etc.)
+   - Capped at 100
+
+3. KEYWORDS SCORE (0-100)
+   - (Technical skills found / Total expected skills) * 100
+   - Expected skills: Common programming languages, frameworks, tools
+
+4. IMPACT SCORE (0-100)
+   - Base: 40 points
+   - +10 per metric/number found (percentages, dollar amounts)
+   - +5 per leadership verb (led, managed, directed)
+   - Capped at 100
+
+5. OVERALL SCORE
+   - Weighted average: Content 30%, Formatting 20%, Keywords 25%, Impact 25%
+
+
+ERROR HANDLING
+--------------
+
+The app handles errors gracefully at multiple levels:
+
+1. File Upload Errors
+   - Invalid file type rejection
+   - Empty file detection
+   - Size limits (client-side validation)
+
+2. API Errors
+   - Missing API key → Falls back to local analyzer
+   - Invalid API key → Falls back to local analyzer
+   - Rate limiting → Returns error message to user
+   - Network errors → Returns error message to user
+
+3. Parse Errors
+   - Invalid JSON from AI → Falls back to local analyzer
+   - Missing fields → Uses default values
+
+
+DEPLOYMENT
+----------
+
+The app is designed for deployment on Vercel:
+
+1. Push to GitHub repository
+2. Connect to Vercel
+3. Add PERPLEXITY_API_KEY environment variable (optional)
+4. Deploy
+
+The app works without an API key, making it easy to demo and test.
+
+
+FUTURE ENHANCEMENTS
+-------------------
+
+Potential improvements:
+- PDF resume parsing (using pdf-parse library)
+- Multiple resume format support (DOCX, etc.)
+- Resume comparison (before/after analysis)
+- Industry-specific analysis (tech, finance, healthcare)
+- ATS (Applicant Tracking System) compatibility scoring
+- Resume template suggestions
+- Export analysis as PDF report
+- User accounts to save analysis history
+
+
+================================================================================
+                              END OF EXPLANATION
+================================================================================
